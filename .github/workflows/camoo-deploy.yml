@@ -1,47 +1,35 @@
-name: Deploy Flutter Web to Camoo Hosting
+# Step 1: Clone repository code (Upgraded from v4 to latest v5)
+- name: Checkout Repository
+  uses: actions/checkout@v5
 
-on:
-  push:
-    branches:
-      - main # Change this to 'master' if your primary branch uses that name
+# Step 2: Install Java setup (Upgraded from v4 to latest v5)
+- name: Setup Java
+  uses: actions/setup-java@v5
+  with:
+    distribution: 'zulu'
+    java-version: '17'
 
-jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest
+# Step 3: Install Flutter Framework SDK
+- name: Setup Flutter
+  uses: subosito/flutter-action@v2
+  with:
+    channel: 'stable'
 
-    steps:
-      # Step 1: Clone repository code to GitHub virtual machine
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+# Step 4: Fetch Flutter pub packages
+- name: Install Dependencies
+  run: flutter pub get
 
-      # Step 2: Install Java setup
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'zulu'
-          java-version: '17'
+# Step 5: Build static release optimized for web browsers
+- name: Build Web Application
+  run: flutter build web --release
 
-      # Step 3: Install Flutter Framework SDK
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
-
-      # Step 4: Fetch Flutter pub packages
-      - name: Install Dependencies
-        run: flutter pub get
-
-      # Step 5: Build static release optimized for web browsers
-      - name: Build Web Application
-        run: flutter build web --release
-
-      # Step 6: Push compiled files to Camoo public_html folder
-      - name: Upload to Camoo Hosting via FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.CAMOO_FTP_SERVER }}
-          username: ${{ secrets.CAMOO_FTP_USERNAME }}
-          password: ${{ secrets.CAMOO_FTP_PASSWORD }}
-          local-dir: ./build/web/
-          server-dir: /public_html/
-          state-name: .ftp-deploy-sync-state.json
+# Step 6: Push compiled files to Camoo public_html folder
+- name: Upload to Camoo Hosting via FTP
+  uses: SamKirkland/FTP-Deploy-Action@v4.3.5 # This action works natively across environments
+  with:
+    server: ${{ secrets.CAMOO_FTP_SERVER }}
+    username: ${{ secrets.CAMOO_FTP_USERNAME }}
+    password: ${{ secrets.CAMOO_FTP_PASSWORD }}
+    local-dir: ./build/web/
+    server-dir: /public_html/
+    state-name: .ftp-deploy-sync-state.json
